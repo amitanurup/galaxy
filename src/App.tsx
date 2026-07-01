@@ -239,7 +239,7 @@ function LoginScreen({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("https://etechworld.in/api/login.php", {
+      const res = await fetch("https://etechworld.in/galaxy_api/login.php", {
         method: "POST",
         headers: { "Content-Type": "application/json", "X-API-KEY": "galaxy_it_repair_secret_key_2026" },
         body: JSON.stringify({ email, password })

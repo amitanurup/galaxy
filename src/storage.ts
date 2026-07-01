@@ -32,7 +32,7 @@ export const subscribeToServerData = (
 
   const fetchData = async () => {
     try {
-      const res = await fetch("https://etechworld.in/api/get_data.php", {
+      const res = await fetch("https://etechworld.in/galaxy_api/get_data.php", {
         headers: { "X-API-KEY": "galaxy_it_repair_secret_key_2026" }
       });
       if (res.ok) {
@@ -62,7 +62,7 @@ export const subscribeToServerData = (
 
 export const saveServerData = async (data: AppData): Promise<boolean> => {
   try {
-    const res = await fetch("https://etechworld.in/api/save_data.php", {
+    const res = await fetch("https://etechworld.in/galaxy_api/save_data.php", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
