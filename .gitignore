@@ -1,0 +1,10 @@
+node_modules/
+dist/
+dev-server.log
+dev-server.err.log
+mobile-server.log
+mobile-server.err.log
+local-data.json
+*.tsbuildinfo
+.env
+.env.*
