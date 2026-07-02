@@ -1021,7 +1021,7 @@ select option {
   display: grid;
   place-items: center;
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: 2px;
   color: var(--teal);
   background: rgba(0, 0, 0, 0.2);
   border: 1px solid rgba(6, 182, 212, 0.15);
@@ -1378,7 +1378,7 @@ select option {
   place-items: center;
   overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 2px;
   color: var(--muted);
   background: rgba(0, 0, 0, 0.2);
 }
