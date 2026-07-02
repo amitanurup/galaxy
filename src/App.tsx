@@ -288,7 +288,7 @@ function LoginScreen({
           <div>
             <h1 id="login-title">Galaxy Cartridge Care</h1>
             <p>Service receive, repair update, inventory</p>
-            <span className="dev-credit">Developed by PC WORLD | v2.3</span>
+            <span className="dev-credit">Developed by PC WORLD | v2.4</span>
           </div>
         </div>
 
@@ -545,7 +545,7 @@ function AppShell({
         <div className="dev-credit-sidebar">
           Galaxy Cartridge Care
           <br />
-          <small>Developed by PC WORLD | v2.3</small>
+          <small>Developed by PC WORLD | v2.4</small>
         </div>
 
         <div className="user-card">
