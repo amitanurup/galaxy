@@ -3141,7 +3141,7 @@ export default function App() {
         },
         () => {
           setSyncMode("local");
-          setSyncError("Firestore read permission denied. Please verify your Firestore rules allow reads.");
+          setSyncError("Network error or server disconnected. Retrying in background...");
         }
       );
     } else {
