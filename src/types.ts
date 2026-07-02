@@ -50,6 +50,7 @@ export type ServiceJob = {
   history: RepairHistory[];
   estimatedCost?: string;
   repairCost?: number;
+  advancePayment?: number;
 };
 
 export type InventoryItem = {

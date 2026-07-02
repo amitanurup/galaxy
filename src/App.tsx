@@ -79,6 +79,7 @@ type JobFormState = {
   assignedEngineerId: string;
   photoDataUrl?: string;
   estimatedCost: string;
+  advancePayment?: string;
 };
 
 const emptyJobForm = (user: AppUser | null): JobFormState => ({
@@ -89,6 +90,7 @@ const emptyJobForm = (user: AppUser | null): JobFormState => ({
   problem: "",
   assignedEngineerId: "",
   estimatedCost: "",
+  advancePayment: "",
 });
 
 const statusClass: Record<ServiceStatus, string> = {
@@ -1398,6 +1400,20 @@ function IntakeForm({
             />
           </div>
         </label>
+        
+        <label className="field full-width">
+          <span>Advance Payment (₹)</span>
+          <div className="input-with-icon">
+            <IndianRupee size={16} />
+            <input
+              type="text"
+              inputMode="numeric"
+              value={form.advancePayment || ""}
+              onChange={(event) => updateForm("advancePayment", event.target.value.replace(/\D/g, ""))}
+              placeholder="Advance payment received"
+            />
+          </div>
+        </label>
 
         <PhotoAnnotator
           photoUrl={form.photoDataUrl || ""}
@@ -1766,7 +1782,22 @@ function StatusPanel({
 
   const handleWhatsApp = () => {
     if (!job) return;
-    let text = `*Galaxy Cartridge Care - Service Receipt*\nTicket No: ${job.ticketNo}\nStatus: ${job.status}\n\n*Customer Details*\nName: ${job.customerName}\nMobile: ${job.mobileNumber}\n\n*Product Details*\nItem: ${job.productName}\nSerial: ${job.productSerialNo}\nProblem: ${job.problem}${job.estimatedCost ? `\nEst. Cost: ₹${job.estimatedCost}` : ''}${job.repairCost !== undefined ? `\nFinal Cost: ₹${job.repairCost}` : ''}`;
+    let text = `*Galaxy Cartridge Care - Service Receipt*\nTicket No: ${job.ticketNo}\nStatus: ${job.status}\n\n*Customer Details*\nName: ${job.customerName}\nMobile: ${job.mobileNumber}\n\n*Product Details*\nItem: ${job.productName}\nSerial: ${job.productSerialNo}\nProblem: ${job.problem}${job.estimatedCost ? `\nEst. Cost: ₹${job.estimatedCost}` : ''}`;
+    
+    if (job.advancePayment) {
+      text += `\nAdvance Paid: ₹${job.advancePayment}`;
+    }
+    
+    if (job.repairCost !== undefined) {
+      text += `\nFinal Cost: ₹${job.repairCost}`;
+      if (job.advancePayment) {
+        text += `\nBalance Due: ₹${job.repairCost - job.advancePayment}`;
+      }
+    }
+    
+    if (job.status === "Cancelled" && job.advancePayment) {
+      text += `\n*Refund Advance: ₹${job.advancePayment}*`;
+    }
     
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
     
@@ -1789,6 +1820,7 @@ function StatusPanel({
       if (job.problem) params.set('pr', job.problem);
       if (job.estimatedCost) params.set('ec', job.estimatedCost.toString());
       if (job.repairCost !== undefined) params.set('rc', job.repairCost.toString());
+      if (job.advancePayment) params.set('ap', job.advancePayment.toString());
       if (job.partsUsed && job.partsUsed.length > 0) {
         params.set('pu', job.partsUsed.map(p => `${p.name}:${p.price}`).join('|'));
       }
@@ -1831,7 +1863,10 @@ function StatusPanel({
           <div class="row"><span class="label">Serial No:</span> <span>${job.productSerialNo}</span></div>
           <div class="row"><span class="label">Problem:</span> <span>${job.problem}</span></div>
           ${job.estimatedCost ? `<div class="row"><span class="label">Approx Estimate:</span> <span>₹${job.estimatedCost}</span></div>` : ''}
-          ${job.repairCost !== undefined ? `<div class="row"><span class="label">Final Repair Cost:</span> <span style="font-weight: bold; color: #2563eb;">₹${job.repairCost}</span></div>` : ''}
+          ${job.advancePayment ? `<div class="row"><span class="label">Advance Payment:</span> <span style="color: #16a34a;">₹${job.advancePayment}</span></div>` : ''}
+          ${job.repairCost !== undefined ? `<div class="row"><span class="label">Final Repair Cost:</span> <span>₹${job.repairCost}</span></div>` : ''}
+          ${job.repairCost !== undefined && job.advancePayment ? `<div class="row"><span class="label">Balance Due:</span> <span style="font-weight: bold; color: #2563eb;">₹${job.repairCost - job.advancePayment}</span></div>` : ''}
+          ${job.status === 'Cancelled' && job.advancePayment ? `<div class="row"><span class="label" style="color: #dc2626;">Refund Advance:</span> <span style="font-weight: bold; color: #dc2626;">₹${job.advancePayment}</span></div>` : ''}
           <div class="row"><span class="label">Current Status:</span> <span>${job.status}</span></div>
           <div style="margin-top: 40px; text-align: center; font-size: 0.9em; color: #666;">
             Thank you for your business!<br/>
@@ -1919,9 +1954,26 @@ function StatusPanel({
             <strong>Approx Estimate:</strong> ₹{job.estimatedCost}
           </p>
         ) : null}
+        {job.advancePayment ? (
+          <p style={{ marginTop: '8px', color: 'var(--green, #16a34a)' }}>
+            <strong>Advance Payment:</strong> ₹{job.advancePayment}
+          </p>
+        ) : null}
         {job.repairCost !== undefined ? (
-          <p style={{ marginTop: '8px', color: 'var(--blue)' }}>
-            <strong>Actual Repair Cost:</strong> ₹{job.repairCost}
+          <div style={{ marginTop: '8px', padding: '8px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+            <p style={{ color: 'var(--blue)' }}>
+              <strong>Total Repair Cost:</strong> ₹{job.repairCost}
+            </p>
+            {job.advancePayment ? (
+              <p style={{ marginTop: '4px', fontWeight: 'bold', fontSize: '1.1em' }}>
+                <strong>Balance Due:</strong> ₹{job.repairCost - job.advancePayment}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+        {job.status === "Cancelled" && job.advancePayment ? (
+          <p style={{ marginTop: '8px', color: '#dc2626', fontWeight: 'bold' }}>
+            <strong>Refund Advance:</strong> ₹{job.advancePayment}
           </p>
         ) : null}
       </div>
@@ -3622,6 +3674,7 @@ export default function App() {
       updatedAt: now,
       repairNote: "",
       estimatedCost: form.estimatedCost,
+      advancePayment: form.advancePayment ? Number(form.advancePayment) : undefined,
       history: [
         {
           id: createId("hist"),

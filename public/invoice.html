@@ -53,6 +53,7 @@
                 const st = params.get('st') || '';
                 const ec = params.get('ec');
                 const rc = params.get('rc');
+                const ap = params.get('ap');
                 const puRaw = params.get('pu');
                 
                 let partsHtml = '';
@@ -127,6 +128,12 @@
                         
                         ${partsHtml}
                         
+                        ${ap && !rc ? `
+                        <tr class="item">
+                            <td>Advance Payment Received</td>
+                            <td style="text-align:right; color: #16a34a;">₹${ap}</td>
+                        </tr>` : ''}
+
                         ${ec && !rc ? `
                         <tr class="item last">
                             <td>Estimated Cost</td>
@@ -134,9 +141,29 @@
                         </tr>` : ''}
 
                         ${rc ? `
+                        <tr class="item">
+                            <td>Total Repair Cost</td>
+                            <td style="text-align:right">₹${rc}</td>
+                        </tr>` : ''}
+
+                        ${rc && ap ? `
+                        <tr class="item">
+                            <td>Advance Payment</td>
+                            <td style="text-align:right; color: #16a34a;">- ₹${ap}</td>
+                        </tr>
+                        <tr class="total">
+                            <td></td>
+                            <td style="text-align:right">Balance Due: ₹${rc - ap}</td>
+                        </tr>` : (rc ? `
                         <tr class="total">
                             <td></td>
                             <td style="text-align:right">Total Repair Cost: ₹${rc}</td>
+                        </tr>` : '')}
+                        
+                        ${st === "Cancelled" && ap ? `
+                        <tr class="total">
+                            <td></td>
+                            <td style="text-align:right; color: #dc2626;">Refund Advance: ₹${ap}</td>
                         </tr>` : ''}
                     </table>
                     <div style="text-align: center; margin-top: 40px; font-size: 0.9em; color: #777;">
