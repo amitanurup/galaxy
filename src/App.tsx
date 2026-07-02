@@ -288,7 +288,7 @@ function LoginScreen({
           <div>
             <h1 id="login-title">Galaxy Cartridge Care</h1>
             <p>Service receive, repair update, inventory</p>
-            <span className="dev-credit">Developed by PC WORLD | v2.5</span>
+            <span className="dev-credit">Developed by PC WORLD | v2.6</span>
           </div>
         </div>
 
@@ -545,7 +545,7 @@ function AppShell({
         <div className="dev-credit-sidebar">
           Galaxy Cartridge Care
           <br />
-          <small>Developed by PC WORLD | v2.5</small>
+          <small>Developed by PC WORLD | v2.6</small>
         </div>
 
         <div className="user-card">
@@ -1691,6 +1691,7 @@ function StatusPanel({
 }) {
   const [status, setStatus] = useState<ServiceStatus>("Received");
   const [assignedEngineerId, setAssignedEngineerId] = useState("ENG-01");
+  const [repairNote, setRepairNote] = useState("");
   const [parts, setParts] = useState<{ id: string, name: string, price: string, isCustom: boolean }[]>([]);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -1713,14 +1714,14 @@ function StatusPanel({
     }
     setStatus(job.status);
     setAssignedEngineerId(job.assignedEngineerId);
-    if (job.repairNote) {
-      const isCustom = !inventory.some(i => i.name.toLowerCase() === job.repairNote.trim().toLowerCase());
-      setParts([{ 
-        id: createId("part"), 
-        name: job.repairNote, 
-        price: job.repairCost !== undefined ? String(job.repairCost) : "", 
-        isCustom 
-      }]);
+    setRepairNote(job.repairNote || "");
+    if (job.partsUsed && job.partsUsed.length > 0) {
+      setParts(job.partsUsed.map(p => ({
+        id: createId("part"),
+        name: p.name,
+        price: String(p.price),
+        isCustom: !inventory.some(i => i.name.toLowerCase() === p.name.trim().toLowerCase())
+      })));
     } else {
       setParts([]);
     }
@@ -1971,8 +1972,19 @@ function StatusPanel({
                 </select>
               </label>
 
+              <label className="field full-width">
+                <span>What Repaired (Optional)</span>
+                <textarea
+                  value={repairNote}
+                  onChange={(e) => setRepairNote(e.target.value)}
+                  placeholder="Describe what was repaired..."
+                  disabled={status !== "Repaired"}
+                  style={{ minHeight: '60px', padding: '8px', border: '1px solid #ccc', borderRadius: '4px' }}
+                />
+              </label>
+
               <div className="field full-width">
-                <span>What Repaired / Parts Used</span>
+                <span>Items (Parts Used)</span>
                 {parts.map((part, index) => (
                   <div key={part.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
                     <PartComboBox
@@ -2056,7 +2068,8 @@ function StatusPanel({
                   onClick={() => {
                     const finalNote = parts.map(p => p.name.trim()).filter(Boolean).join(", ");
                     const finalCost = parts.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
-                    onSave(job.id, status, assignedEngineerId, finalNote, finalCost > 0 || finalNote ? finalCost : undefined, parts);
+                    // Pass repairNote + parts list to the history note if needed, but onSave expects the primary repairNote
+                    onSave(job.id, status, assignedEngineerId, repairNote, finalCost > 0 ? finalCost : undefined, parts);
                     setStatusConfirmOpen(false);
                     setDialogOpen(false);
                   }}
@@ -3502,13 +3515,15 @@ export default function App() {
           job.status !== status ||
           job.assignedEngineerId !== assignedEngineerId ||
           job.repairNote.trim() !== note.trim() ||
-          job.repairCost !== repairCost;
+          job.repairCost !== repairCost ||
+          (partsUsed && partsUsed.length > 0);
         return {
           ...job,
           photoDataUrl: compressedDeliveredPhoto ?? job.photoDataUrl,
           status,
           assignedEngineerId,
           repairNote: note.trim(),
+          partsUsed: partsUsed ? partsUsed.map(p => ({ name: p.name.trim(), price: Number(p.price) || 0 })) : job.partsUsed,
           repairCost: repairCost !== undefined ? repairCost : job.repairCost,
           updatedAt: now,
           history: changed

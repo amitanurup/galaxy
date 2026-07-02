@@ -46,6 +46,7 @@ export type ServiceJob = {
   createdAt: string;
   updatedAt: string;
   repairNote: string;
+  partsUsed?: { name: string; price: number }[];
   history: RepairHistory[];
   estimatedCost?: string;
   repairCost?: number;
