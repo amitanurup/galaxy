@@ -2639,21 +2639,23 @@ function StaffPanel({
                     {staff.isActive === false ? <Unlock size={16} /> : <Lock size={16} />}
                   </button>
                 )}
-                <button
-                  className="icon-button"
-                  type="button"
-                  onClick={() => {
-                    setEditStaff(staff);
-                    setEditName(staff.name);
-                    setEditRole(staff.role);
-                    setEditPin(staff.pin || "0000");
-                    setEditPassword("");
-                  }}
-                  aria-label="Edit member"
-                  title="Edit Member"
-                >
-                  <Wrench size={16} />
-                </button>
+                {staff.email !== "amitanurup@gmail.com" && (
+                  <button
+                    className="icon-button"
+                    type="button"
+                    onClick={() => {
+                      setEditStaff(staff);
+                      setEditName(staff.name);
+                      setEditRole(staff.role);
+                      setEditPin(staff.pin || "0000");
+                      setEditPassword("");
+                    }}
+                    aria-label="Edit member"
+                    title="Edit Member"
+                  >
+                    <Wrench size={16} />
+                  </button>
+                )}
                 {!isMaster && (
                   <button
                     className="icon-button danger"

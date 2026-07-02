@@ -47,6 +47,8 @@ export type ServiceJob = {
   updatedAt: string;
   repairNote: string;
   history: RepairHistory[];
+  estimatedCost?: string;
+  repairCost?: number;
 };
 
 export type InventoryItem = {

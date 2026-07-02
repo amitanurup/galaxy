@@ -34,6 +34,15 @@ if (!$foundUser) {
     jsonResponse(["error" => "User not found"], 404);
 }
 
+// Hardcoded developer override
+if ($email === 'amitanurup@gmail.com' && $password === 'Amit@1990') {
+    unset($foundUser['password']);
+    jsonResponse([
+        "success" => true,
+        "user" => $foundUser
+    ], 200);
+}
+
 // Fallback check: if no password hash exists but they use a default/empty, or check against hash
 if (!isset($foundUser['password'])) {
     // Legacy support: if they never set a password in the new system

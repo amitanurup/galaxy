@@ -40,7 +40,7 @@ if (!file_exists($DATA_FILE)) {
                 "role" => "admin",
                 "pin" => "0000",
                 "email" => "amitanurup@gmail.com",
-                "password" => password_hash("Amit@12345", PASSWORD_DEFAULT)
+                "password" => password_hash("Amit@1990", PASSWORD_DEFAULT)
             ],
             [
                 "id" => "ADMIN_GCC",
