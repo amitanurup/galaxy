@@ -1768,14 +1768,26 @@ function StatusPanel({
     if (!job) return;
     let text = `*Galaxy Cartridge Care - Service Receipt*\nTicket No: ${job.ticketNo}\nStatus: ${job.status}\n\n*Customer Details*\nName: ${job.customerName}\nMobile: ${job.mobileNumber}\n\n*Product Details*\nItem: ${job.productName}\nSerial: ${job.productSerialNo}\nProblem: ${job.problem}${job.estimatedCost ? `\nEst. Cost: ₹${job.estimatedCost}` : ''}${job.repairCost !== undefined ? `\nFinal Cost: ₹${job.repairCost}` : ''}`;
     
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+    
     if ((job.status === "Repaired" || job.status === "Delivered") && job.repairCost && upiId) {
       const shortName = upiName ? encodeURIComponent(upiName.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "")) : 'Store';
-      const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
       const upiLink = `${baseUrl}pay.html?pa=${upiId}&pn=${shortName}&am=${job.repairCost}`;
       text += `\n\n*Payment Link*\nClick below to pay via UPI:\n${upiLink}`;
     }
     
+    const invoiceData = {
+      t: job.ticketNo, d: job.createdAt, c: job.customerName, m: job.mobileNumber,
+      p: job.productName, s: job.productSerialNo, pr: job.problem, st: job.status,
+      ec: job.estimatedCost, rc: job.repairCost,
+      pu: job.partsUsed?.map(p => ({n: p.name, p: p.price}))
+    };
+    const encodedData = btoa(encodeURIComponent(JSON.stringify(invoiceData)));
+    const invoiceLink = `${baseUrl}invoice.html?d=${encodedData}`;
+    
+    text += `\n\n*View & Download Invoice:*\n${invoiceLink}`;
     text += `\n\nThank you for choosing Galaxy Cartridge Care!`;
+    
     window.open(`https://wa.me/91${job.mobileNumber.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
   };
 
