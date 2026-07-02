@@ -288,7 +288,7 @@ function LoginScreen({
           <div>
             <h1 id="login-title">Galaxy Cartridge Care</h1>
             <p>Service receive, repair update, inventory</p>
-            <span className="dev-credit">Developed by PC WORLD | v2.4</span>
+            <span className="dev-credit">Developed by PC WORLD | v2.5</span>
           </div>
         </div>
 
@@ -545,7 +545,7 @@ function AppShell({
         <div className="dev-credit-sidebar">
           Galaxy Cartridge Care
           <br />
-          <small>Developed by PC WORLD | v2.4</small>
+          <small>Developed by PC WORLD | v2.5</small>
         </div>
 
         <div className="user-card">
@@ -1608,7 +1608,7 @@ function PartComboBox({
   const filtered = inventory.filter(i => i.name.toLowerCase().includes(value.toLowerCase()));
 
   return (
-    <div ref={wrapperRef} className="input-with-icon" style={{ position: 'relative', width: '100%', flex: 2 }}>
+    <div ref={wrapperRef} className="input-with-icon" style={{ position: 'relative', width: '100%', flex: 3 }}>
       <Wrench size={16} />
       <input
         type="text"
@@ -1620,6 +1620,7 @@ function PartComboBox({
         onFocus={() => setOpen(true)}
         placeholder="Type or select part..."
         disabled={disabled}
+        style={{ width: '100%' }}
       />
       {open && !disabled && (
         <ul style={{
@@ -1726,9 +1727,11 @@ function StatusPanel({
   }, [job, inventory]);
 
   const updatePart = (index: number, field: 'name' | 'price' | 'isCustom', value: string | boolean) => {
-    const newParts = [...parts];
-    newParts[index] = { ...newParts[index], [field]: value };
-    setParts(newParts);
+    setParts(prev => {
+      const newParts = [...prev];
+      newParts[index] = { ...newParts[index], [field]: value };
+      return newParts;
+    });
   };
   
   const removePart = (index: number) => {
