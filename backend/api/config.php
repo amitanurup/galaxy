@@ -9,7 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 $API_KEY = "galaxy_it_repair_secret_key_2026"; // Must match frontend API key
-$DATA_FILE = __DIR__ . "/../data.json";
+$DATA_FILE = __DIR__ . "/data.json";
 
 function jsonResponse($data, $statusCode = 200) {
     http_response_code($statusCode);
@@ -39,8 +39,8 @@ if (!file_exists($DATA_FILE)) {
                 "name" => "Admin User",
                 "role" => "admin",
                 "pin" => "0000",
-                "email" => "admin@etechworld.in",
-                "password" => password_hash("123456", PASSWORD_DEFAULT)
+                "email" => "gccbhubaneswar@gmail.com",
+                "password" => password_hash("Admin@12345", PASSWORD_DEFAULT)
             ]
         ]
     ];

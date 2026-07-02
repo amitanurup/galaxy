@@ -2350,6 +2350,7 @@ function StaffPanel({
   const [editRole, setEditRole] = useState<UserRole>("engineer");
   const [editPin, setEditPin] = useState("0000");
   const [editEmail, setEditEmail] = useState("");
+  const [editPassword, setEditPassword] = useState("");
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -2476,6 +2477,7 @@ function StaffPanel({
                     setEditName(staff.name);
                     setEditRole(staff.role);
                     setEditPin(staff.pin || "0000");
+                    setEditPassword("");
                   }}
                   aria-label="Edit member"
                   title="Edit Member"
@@ -2518,6 +2520,7 @@ function StaffPanel({
                     name: editName, 
                     role: editRole,
                     pin: editPin,
+                    password: editPassword || undefined,
                   });
                   setEditStaff(null);
                 }
@@ -2558,7 +2561,16 @@ function StaffPanel({
                   type="email"
                   value={editStaff.email || "No email"}
                   disabled
-                  title="Password/Email changes must be done via Reset Password"
+                />
+              </label>
+              <label className="field">
+                <span>New Password</span>
+                <input
+                  type="password"
+                  value={editPassword}
+                  onChange={(e) => setEditPassword(e.target.value)}
+                  placeholder="Leave blank to keep current password"
+                  minLength={6}
                 />
               </label>
               <button type="submit" className="primary-button full-width" aria-label="Action button">
