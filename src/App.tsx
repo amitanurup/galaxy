@@ -1285,8 +1285,8 @@ function IntakeForm({
                 .map((c, idx) => (
                   <li 
                     key={idx} 
-                    style={{ padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid #f1f5f9" }}
-                    onClick={() => {
+                    style={{ padding: "8px 12px", cursor: "pointer", borderBottom: "1px solid #f1f5f9", color: "#000" }}
+                    onMouseDown={() => {
                       updateForm("customerName", c.name);
                       updateForm("mobileNumber", c.mobile);
                       setShowCustomerDropdown(false);
@@ -1294,7 +1294,7 @@ function IntakeForm({
                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#f8fafc")}
                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                   >
-                    <strong>{c.name}</strong> <span style={{color: "#64748b", fontSize: "0.9em"}}>{c.mobile}</span>
+                    <strong style={{ color: "#000" }}>{c.name}</strong> <span style={{color: "#64748b", fontSize: "0.9em"}}>{c.mobile}</span>
                   </li>
               ))}
             </ul>
