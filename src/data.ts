@@ -26,6 +26,7 @@ export const createDefaultData = (): AppData => ({
     { id: "ADMIN_GCC", name: "Amrut Amrup (GCC Master)", role: "admin", pin: "0000", email: "gccbhubaneswar@gmail.com" },
   ],
   inventory: [],
+  customers: [],
   jobs: [],
 });
 

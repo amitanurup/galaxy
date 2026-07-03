@@ -54,6 +54,7 @@
                 const ec = params.get('ec');
                 const rc = params.get('rc');
                 const ap = params.get('ap');
+                const dp = params.get('dp');
                 const puRaw = params.get('pu');
                 
                 let partsHtml = '';
@@ -150,15 +151,22 @@
                         <tr class="item">
                             <td>Advance Payment</td>
                             <td style="text-align:right; color: #16a34a;">- ₹${ap}</td>
-                        </tr>
-                        <tr class="total">
-                            <td></td>
-                            <td style="text-align:right">Balance Due: ₹${rc - ap}</td>
-                        </tr>` : (rc ? `
-                        <tr class="total">
-                            <td></td>
-                            <td style="text-align:right">Total Repair Cost: ₹${rc}</td>
-                        </tr>` : '')}
+                        </tr>` : ''}
+
+                        ${rc && dp ? `
+                        <tr class="item">
+                            <td>Paid at Delivery</td>
+                            <td style="text-align:right; color: #16a34a;">- ₹${dp}</td>
+                        </tr>` : ''}
+
+                        ${rc ? (() => {
+                            const balance = rc - (Number(ap) || 0) - (Number(dp) || 0);
+                            return `
+                            <tr class="total">
+                                <td></td>
+                                <td style="text-align:right">${balance > 0 ? `Balance Due: ₹${balance}` : `Total Paid: ₹${rc}`}</td>
+                            </tr>`;
+                        })() : ''}
                         
                         ${st === "Cancelled" && ap ? `
                         <tr class="total">

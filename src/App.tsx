@@ -33,6 +33,7 @@ import {
   Trash2,
   Upload,
   User,
+  Users,
   Wifi,
   Wrench,
   X,
@@ -60,6 +61,7 @@ import {
 } from "./storage";
 import type {
   AppData,
+  Customer,
   InventoryItem,
   ServiceJob,
   ServiceStatus,
@@ -67,7 +69,7 @@ import type {
   UserRole,
 } from "./types";
 
-type ViewKey = "dashboard" | "receive" | "jobs" | "details" | "inventory" | "staff" | "settings";
+type ViewKey = "dashboard" | "receive" | "jobs" | "details" | "inventory" | "staff" | "customers" | "settings";
 type SyncMode = "checking" | "server" | "local";
 
 type JobFormState = {
@@ -120,6 +122,7 @@ const viewTitle: Record<ViewKey, string> = {
   details: "Job Details",
   inventory: "Inventory Management",
   staff: "Team & Roles",
+  customers: "Customer Directory",
   settings: "Settings",
 };
 
@@ -243,11 +246,22 @@ function LoginScreen({
     setLoading(true);
     setError("");
     try {
-      const res = await fetch("https://etechworld.in/galaxy_api/login.php", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-API-KEY": "galaxy_it_repair_secret_key_2026" },
-        body: JSON.stringify({ email, password })
-      });
+      let baseUrl = "https://etechworld.in/galaxy_api";
+      let res;
+      try {
+        res = await fetch(`${baseUrl}/login.php?api_key=galaxy_it_repair_secret_key_2026`, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ email, password })
+        });
+      } catch (err) {
+        baseUrl = "https://www.etechworld.in/galaxy_api";
+        res = await fetch(`${baseUrl}/login.php?api_key=galaxy_it_repair_secret_key_2026`, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({ email, password })
+        });
+      }
       const data = await res.json();
       if (res.ok && data.success) {
         onLogin(data.user);
@@ -290,7 +304,7 @@ function LoginScreen({
           <div>
             <h1 id="login-title">Galaxy Cartridge Care</h1>
             <p>Service receive, repair update, inventory</p>
-            <span className="dev-credit">Developed by PC WORLD | v2.25</span>
+            <span className="dev-credit">Developed by PC WORLD | v2.30</span>
           </div>
         </div>
 
@@ -459,6 +473,7 @@ function AppShell({
     user?.role === "admin"
       ? [
           { key: "staff" as const, label: "Team", icon: User },
+          { key: "customers" as const, label: "Customers", icon: Users },
           { key: "settings" as const, label: "Settings", icon: Settings },
         ]
       : []
@@ -471,6 +486,7 @@ function AppShell({
         ...(user?.role === "admin"
           ? [
               { key: "staff" as const, label: "Team", icon: User },
+              { key: "customers" as const, label: "Customers", icon: Users },
               { key: "settings" as const, label: "Settings", icon: Settings },
             ]
           : []),
@@ -566,7 +582,7 @@ function AppShell({
         <div className="dev-credit-sidebar">
           Galaxy Cartridge Care
           <br />
-          <small>Developed by PC WORLD | v2.25</small>
+          <small>Developed by PC WORLD | v2.30</small>
         </div>
 
         <div className="user-card">
@@ -627,14 +643,16 @@ function StatCard({
   label,
   value,
   tone,
+  onClick,
 }: {
   icon: LucideIcon;
   label: string;
   value: string | number;
   tone: string;
+  onClick?: () => void;
 }) {
   return (
-    <article className={`stat-card ${tone}`}>
+    <article className={`stat-card ${tone}`} onClick={onClick} style={onClick ? { cursor: 'pointer' } : undefined}>
       <span className="stat-icon">
         <Icon size={20} />
       </span>
@@ -734,10 +752,16 @@ function SummaryGrid({
   user,
   jobs,
   inventory,
+  upiId,
+  upiName,
+  onMarkPaid,
 }: {
   user: AppUser;
   jobs: ServiceJob[];
   inventory: InventoryItem[];
+  upiId?: string;
+  upiName?: string;
+  onMarkPaid: (jobId: string) => void;
 }) {
   const today = new Date().toDateString();
   const pending = jobs.filter(
@@ -752,41 +776,198 @@ function SummaryGrid({
     0,
   );
 
+  const creditJobs = jobs.filter(j => j.status === "Delivered" && j.isCredit === true);
+  const totalCreditDue = creditJobs.reduce((sum, j) => sum + ((j.repairCost || 0) - (j.advancePayment || 0) - (j.deliveryPayment || 0)), 0);
+
+  const [creditModalOpen, setCreditModalOpen] = useState(false);
+
+  const buildPaymentReminder = (job: ServiceJob) => {
+    const balanceDue = (job.repairCost || 0) - (job.advancePayment || 0) - (job.deliveryPayment || 0);
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+    
+    let text = `*Galaxy Cartridge Care - Payment Reminder*\n\nHi ${job.customerName},\nThis is a friendly reminder for your pending payment.\n\nTicket: ${job.ticketNo}\nProduct: ${job.productName}\nTotal Cost: ₹${job.repairCost}\nAdvance Paid: ₹${job.advancePayment || 0}${job.deliveryPayment ? `\nPaid at Delivery: ₹${job.deliveryPayment}` : ''}\n*Balance Due: ₹${balanceDue}*`;
+
+    if (upiId) {
+      const shortName = upiName ? encodeURIComponent(upiName.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "")) : 'Store';
+      const upiLink = `${baseUrl}pay.html?pa=${upiId}&pn=${shortName}&am=${balanceDue}`;
+      text += `\n\n*Pay Online via UPI:*\n${upiLink}`;
+    }
+
+    const params = new URLSearchParams({
+      t: job.ticketNo,
+      d: job.createdAt,
+      c: job.customerName,
+      m: job.mobileNumber,
+      p: job.productName,
+      st: job.status
+    });
+    if (job.productSerialNo) params.set('s', job.productSerialNo);
+    if (job.problem) params.set('pr', job.problem);
+    if (job.estimatedCost) params.set('ec', job.estimatedCost.toString());
+    if (job.repairCost !== undefined) params.set('rc', job.repairCost.toString());
+    if (job.advancePayment) params.set('ap', job.advancePayment.toString());
+    if (job.deliveryPayment) params.set('dp', job.deliveryPayment.toString());
+    if (job.partsUsed && job.partsUsed.length > 0) {
+      params.set('pu', job.partsUsed.map(p => `${p.name}:${p.price}`).join('|'));
+    }
+    const invoiceLink = `${baseUrl}invoice.html?${params.toString()}`;
+    text += `\n\n*View Invoice:*\n${invoiceLink}`;
+    
+    text += `\n\nPlease clear the dues at the earliest. Thank you!`;
+    return text;
+  };
+
+  const handleWhatsApp = (job: ServiceJob) => {
+    const text = buildPaymentReminder(job);
+    window.open(`https://wa.me/91${job.mobileNumber.replace(/\D/g, '')}?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const handleSms = (job: ServiceJob) => {
+    const balanceDue = (job.repairCost || 0) - (job.advancePayment || 0) - (job.deliveryPayment || 0);
+    const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
+    let smsText = `Galaxy Cartridge Care: Hi ${job.customerName}, your pending balance for Ticket ${job.ticketNo} is Rs.${balanceDue}.`;
+    if (upiId) {
+      const shortName = upiName ? encodeURIComponent(upiName.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "")) : 'Store';
+      smsText += ` Pay: ${baseUrl}pay.html?pa=${upiId}&pn=${shortName}&am=${balanceDue}`;
+    }
+    window.open(`sms:+91${job.mobileNumber.replace(/\D/g, '')}?body=${encodeURIComponent(smsText)}`, '_self');
+  };
+
   return (
-    <section className="summary-grid" aria-label="Service summary">
-      <StatCard
-        icon={ClipboardList}
-        label="Total Jobs"
-        value={jobs.length}
-        tone="tone-blue"
-      />
-      <StatCard
-        icon={AlertTriangle}
-        label="Pending"
-        value={pending}
-        tone="tone-amber"
-      />
-      <StatCard
-        icon={CheckCircle2}
-        label="Repaired"
-        value={repaired}
-        tone="tone-green"
-      />
-      <StatCard
-        icon={Clock}
-        label="Today's Intake"
-        value={todayCount}
-        tone="tone-purple"
-      />
-      {user.role === "admin" && (
+    <>
+      <section className="summary-grid" aria-label="Service summary">
         <StatCard
-          icon={IndianRupee}
-          label="Inventory Value"
-          value={formatMoney(inventoryValue)}
-          tone="tone-teal"
+          icon={ClipboardList}
+          label="Total Jobs"
+          value={jobs.length}
+          tone="tone-blue"
         />
+        <StatCard
+          icon={AlertTriangle}
+          label="Pending"
+          value={pending}
+          tone="tone-amber"
+        />
+        <StatCard
+          icon={CheckCircle2}
+          label="Repaired"
+          value={repaired}
+          tone="tone-green"
+        />
+        <StatCard
+          icon={Clock}
+          label="Today's Intake"
+          value={todayCount}
+          tone="tone-purple"
+        />
+        {user.role === "admin" && (
+          <StatCard
+            icon={IndianRupee}
+            label="Inventory Value"
+            value={formatMoney(inventoryValue)}
+            tone="tone-teal"
+          />
+        )}
+        {user.role === "admin" && creditJobs.length > 0 && (
+          <StatCard
+            icon={AlertTriangle}
+            label="Credit Dues"
+            value={`₹${totalCreditDue}`}
+            tone="tone-amber"
+            onClick={() => setCreditModalOpen(true)}
+          />
+        )}
+      </section>
+
+      {creditModalOpen && (
+        <div className="modal-overlay" onClick={() => setCreditModalOpen(false)} aria-hidden="true">
+          <section className="modal-card" onClick={(e) => e.stopPropagation()} role="dialog" style={{ maxWidth: '600px', width: '95%' }}>
+            <div className="modal-header">
+              <h3>Credit Customers ({creditJobs.length})</h3>
+              <button className="icon-button" onClick={() => setCreditModalOpen(false)} aria-label="Close">
+                <X size={18} />
+              </button>
+            </div>
+            <div style={{ maxHeight: '60vh', overflowY: 'auto', padding: '4px 0' }}>
+              {creditJobs.length === 0 ? (
+                <p style={{ textAlign: 'center', color: 'var(--muted)', padding: '24px' }}>No credit customers found.</p>
+              ) : (
+                creditJobs.map(job => {
+                  const balanceDue = (job.repairCost || 0) - (job.advancePayment || 0) - (job.deliveryPayment || 0);
+                  return (
+                    <div key={job.id} style={{ 
+                      padding: '14px', 
+                      marginBottom: '10px', 
+                      background: 'var(--surface-soft)', 
+                      borderRadius: '12px', 
+                      border: '1px solid var(--border)' 
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', flexWrap: 'wrap', gap: '6px' }}>
+                        <div>
+                          <strong style={{ color: 'var(--text-contrast)', fontSize: '1rem' }}>{job.customerName}</strong>
+                          <p style={{ margin: '2px 0 0', color: 'var(--muted)', fontSize: '0.85rem' }}>
+                            <Phone size={12} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                            {job.mobileNumber} &middot; {job.ticketNo}
+                          </p>
+                        </div>
+                        <span style={{ 
+                          fontWeight: 'bold', 
+                          fontSize: '1.05rem', 
+                          color: 'var(--amber)',
+                          whiteSpace: 'nowrap'
+                        }}>
+                          ₹{balanceDue}
+                        </span>
+                      </div>
+                      <p style={{ margin: '0 0 10px', color: 'var(--muted)', fontSize: '0.82rem' }}>
+                        {job.productName} &middot; Total: ₹{job.repairCost} &middot; Advance: ₹{job.advancePayment || 0}{job.deliveryPayment ? ` &middot; Paid at Delivery: ₹${job.deliveryPayment}` : ''}
+                      </p>
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                        <button 
+                          className="utility-button filled" 
+                          style={{ flex: 1, justifyContent: 'center', minWidth: '100px', background: 'rgba(37, 211, 102, 0.15)', color: '#25d366', border: '1px solid rgba(37, 211, 102, 0.3)' }}
+                          onClick={() => handleWhatsApp(job)}
+                        >
+                          <MessageCircle size={14} /> WhatsApp
+                        </button>
+                        <button 
+                          className="utility-button filled" 
+                          style={{ flex: 1, justifyContent: 'center', minWidth: '80px', background: 'rgba(59, 130, 246, 0.15)', color: 'var(--blue)', border: '1px solid rgba(59, 130, 246, 0.3)' }}
+                          onClick={() => handleSms(job)}
+                        >
+                          <Phone size={14} /> SMS
+                        </button>
+                        <button 
+                          className="utility-button filled" 
+                          style={{ flex: 1, justifyContent: 'center', minWidth: '100px', background: 'rgba(16, 185, 129, 0.15)', color: 'var(--green)', border: '1px solid rgba(16, 185, 129, 0.3)' }}
+                          onClick={() => {
+                            onMarkPaid(job.id);
+                            if (creditJobs.length <= 1) setCreditModalOpen(false);
+                          }}
+                        >
+                          <CheckCircle2 size={14} /> Mark Paid
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div style={{ 
+              borderTop: '1px solid var(--border)', 
+              paddingTop: '12px', 
+              marginTop: '8px',
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center' 
+            }}>
+              <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Total Outstanding</span>
+              <strong style={{ color: 'var(--amber)', fontSize: '1.2rem' }}>₹{totalCreditDue}</strong>
+            </div>
+          </section>
+        </div>
       )}
-    </section>
+    </>
   );
 }
 
@@ -1697,7 +1878,7 @@ function PartComboBox({
   const filtered = inventory.filter(i => i.name.toLowerCase().includes(value.toLowerCase()));
 
   return (
-    <div ref={wrapperRef} className="input-with-icon" style={{ position: 'relative', width: '100%', flex: 3 }}>
+    <div ref={wrapperRef} className="input-with-icon" style={{ position: 'relative', width: '100%', flex: 2, minWidth: '160px' }}>
       <Wrench size={16} />
       <input
         type="text"
@@ -1778,7 +1959,9 @@ function StatusPanel({
     assignedEngineerId: string,
     note: string,
     repairCost?: number,
-    partsUsed?: { name: string; price: string; isCustom: boolean }[]
+    partsUsed?: { name: string; price: string; isCustom: boolean }[],
+    isCredit?: boolean,
+    deliveryPayment?: number
   ) => void | Promise<void>;
   onEditJob: (
     jobId: string,
@@ -1797,7 +1980,8 @@ function StatusPanel({
   const [viewerOpen, setViewerOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [statusConfirmOpen, setStatusConfirmOpen] = useState(false);
-
+  const [isCredit, setIsCredit] = useState(false);
+  const [deliveryPayment, setDeliveryPayment] = useState("");
   const [editJobDialogOpen, setEditJobDialogOpen] = useState(false);
   const [editCustName, setEditCustName] = useState("");
   const [editMobile, setEditMobile] = useState("");
@@ -1816,6 +2000,8 @@ function StatusPanel({
     setStatus(job.status);
     setAssignedEngineerId(job.assignedEngineerId);
     setRepairNote(job.repairNote || "");
+    setIsCredit(job.isCredit || false);
+    setDeliveryPayment(job.deliveryPayment ? String(job.deliveryPayment) : "");
     if (job.partsUsed && job.partsUsed.length > 0) {
       setParts(job.partsUsed.map(p => ({
         id: createId("part"),
@@ -1860,11 +2046,15 @@ function StatusPanel({
     if (job.advancePayment) {
       text += `\nAdvance Paid: ₹${job.advancePayment}`;
     }
+    if (job.deliveryPayment) {
+      text += `\nPaid at Delivery: ₹${job.deliveryPayment}`;
+    }
     
     if (job.repairCost !== undefined) {
       text += `\nFinal Cost: ₹${job.repairCost}`;
-      if (job.advancePayment) {
-        text += `\nBalance Due: ₹${job.repairCost - job.advancePayment}`;
+      const balanceDue = job.repairCost - (job.advancePayment || 0) - (job.deliveryPayment || 0);
+      if (balanceDue > 0) {
+        text += `\nBalance Due: ₹${balanceDue}`;
       }
     }
     
@@ -1875,9 +2065,12 @@ function StatusPanel({
     const baseUrl = window.location.origin + window.location.pathname.replace(/\/[^/]*$/, '/');
     
     if ((job.status === "Repaired" || job.status === "Delivered") && job.repairCost && upiId) {
-      const shortName = upiName ? encodeURIComponent(upiName.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "")) : 'Store';
-      const upiLink = `${baseUrl}pay.html?pa=${upiId}&pn=${shortName}&am=${job.repairCost}`;
-      text += `\n\n*Payment Link*\nClick below to pay via UPI:\n${upiLink}`;
+      const balanceDue = job.repairCost - (job.advancePayment || 0) - (job.deliveryPayment || 0);
+      if (balanceDue > 0) {
+        const shortName = upiName ? encodeURIComponent(upiName.split(" ")[0].replace(/[^a-zA-Z0-9]/g, "")) : 'Store';
+        const upiLink = `${baseUrl}pay.html?pa=${upiId}&pn=${shortName}&am=${balanceDue}`;
+        text += `\n\n*Payment Link*\nClick below to pay via UPI:\n${upiLink}`;
+      }
     }
     
     if (job.status === "Repaired" || job.status === "Delivered") {
@@ -1894,6 +2087,7 @@ function StatusPanel({
       if (job.estimatedCost) params.set('ec', job.estimatedCost.toString());
       if (job.repairCost !== undefined) params.set('rc', job.repairCost.toString());
       if (job.advancePayment) params.set('ap', job.advancePayment.toString());
+      if (job.deliveryPayment) params.set('dp', job.deliveryPayment.toString());
       if (job.partsUsed && job.partsUsed.length > 0) {
         params.set('pu', job.partsUsed.map(p => `${p.name}:${p.price}`).join('|'));
       }
@@ -1911,6 +2105,9 @@ function StatusPanel({
     if (!job) return;
     const win = window.open('', '_blank');
     if (!win) return;
+    
+    const balanceDue = job.repairCost !== undefined ? (job.repairCost - (job.advancePayment || 0) - (job.deliveryPayment || 0)) : 0;
+    
     win.document.write(`
       <html>
         <head>
@@ -1937,8 +2134,9 @@ function StatusPanel({
           <div class="row"><span class="label">Problem:</span> <span>${job.problem}</span></div>
           ${job.estimatedCost ? `<div class="row"><span class="label">Approx Estimate:</span> <span>₹${job.estimatedCost}</span></div>` : ''}
           ${job.advancePayment ? `<div class="row"><span class="label">Advance Payment:</span> <span style="color: #16a34a;">₹${job.advancePayment}</span></div>` : ''}
+          ${job.deliveryPayment ? `<div class="row"><span class="label">Paid at Delivery:</span> <span style="color: #16a34a;">₹${job.deliveryPayment}</span></div>` : ''}
           ${job.repairCost !== undefined ? `<div class="row"><span class="label">Final Repair Cost:</span> <span>₹${job.repairCost}</span></div>` : ''}
-          ${job.repairCost !== undefined && job.advancePayment ? `<div class="row"><span class="label">Balance Due:</span> <span style="font-weight: bold; color: #2563eb;">₹${job.repairCost - job.advancePayment}</span></div>` : ''}
+          ${job.repairCost !== undefined ? `<div class="row"><span class="label">Balance Due:</span> <span style="font-weight: bold; color: ${balanceDue > 0 ? '#dc2626' : '#2563eb'};">₹${balanceDue}</span></div>` : ''}
           ${job.status === 'Cancelled' && job.advancePayment ? `<div class="row"><span class="label" style="color: #dc2626;">Refund Advance:</span> <span style="font-weight: bold; color: #dc2626;">₹${job.advancePayment}</span></div>` : ''}
           <div class="row"><span class="label">Current Status:</span> <span>${job.status}</span></div>
           <div style="margin-top: 40px; text-align: center; font-size: 0.9em; color: #666;">
@@ -2032,16 +2230,41 @@ function StatusPanel({
             <strong>Advance Payment:</strong> ₹{job.advancePayment}
           </p>
         ) : null}
+        {job.deliveryPayment ? (
+          <p style={{ marginTop: '8px', color: 'var(--green, #16a34a)' }}>
+            <strong>Paid at Delivery:</strong> ₹{job.deliveryPayment}
+          </p>
+        ) : null}
         {job.repairCost !== undefined ? (
-          <div style={{ marginTop: '8px', padding: '8px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
-            <p style={{ color: 'var(--blue)' }}>
-              <strong>Total Repair Cost:</strong> ₹{job.repairCost}
-            </p>
-            {job.advancePayment ? (
-              <p style={{ marginTop: '4px', fontWeight: 'bold', fontSize: '1.1em' }}>
-                <strong>Balance Due:</strong> ₹{job.repairCost - job.advancePayment}
+          <div style={{ marginTop: '8px', padding: '12px', background: 'var(--surface-soft)', borderRadius: '8px', border: '1px solid var(--border)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <p style={{ color: 'var(--teal)' }}>
+                <strong>Total Repair Cost:</strong> ₹{job.repairCost}
+              </p>
+              {job.status === "Delivered" && (
+                <span style={{ 
+                  padding: '4px 8px', 
+                  borderRadius: '12px', 
+                  fontSize: '0.8rem', 
+                  fontWeight: 'bold',
+                  background: job.isCredit ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)',
+                  color: job.isCredit ? 'var(--amber)' : 'var(--green)',
+                  border: `1px solid ${job.isCredit ? 'rgba(245, 158, 11, 0.4)' : 'rgba(16, 185, 129, 0.4)'}`
+                }}>
+                  {job.isCredit ? 'Credit (Unpaid)' : 'Paid'}
+                </span>
+              )}
+            </div>
+            {job.repairCost - (job.advancePayment || 0) > 0 && job.status !== "Delivered" ? (
+              <p style={{ marginTop: '6px', fontWeight: 'bold', fontSize: '1.1em', color: 'var(--amber)' }}>
+                <strong>Balance Due:</strong> ₹{job.repairCost - (job.advancePayment || 0)}
               </p>
             ) : null}
+            {job.status === "Delivered" && job.isCredit && (
+              <p style={{ marginTop: '6px', fontWeight: 'bold', fontSize: '1.1em', color: 'var(--amber)' }}>
+                <strong>Balance Due:</strong> ₹{job.repairCost - (job.advancePayment || 0) - (job.deliveryPayment || 0)}
+              </p>
+            )}
           </div>
         ) : null}
         {job.status === "Cancelled" && job.advancePayment ? (
@@ -2151,7 +2374,7 @@ function StatusPanel({
               <div className="field" style={{ gridColumn: '1 / -1' }}>
                 <span>Items (Parts Used)</span>
                 {parts.map((part, index) => (
-                  <div key={part.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+                  <div key={part.id} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                     <PartComboBox
                       value={part.name}
                       onChangeName={(val) => {
@@ -2162,7 +2385,7 @@ function StatusPanel({
                       inventory={inventory}
                       disabled={status !== "Repaired"}
                     />
-                    <div className="input-with-icon" style={{ flex: 1 }}>
+                    <div className="input-with-icon" style={{ flex: 1, minWidth: '100px' }}>
                       <IndianRupee size={16} />
                       <input
                         type="text"
@@ -2211,6 +2434,74 @@ function StatusPanel({
                 />
               </label>
 
+              {status === "Delivered" && job.repairCost !== undefined && (() => {
+                const totalDue = job.repairCost - (job.advancePayment || 0);
+                const paidNow = Number(deliveryPayment) || 0;
+                const remaining = totalDue - paidNow;
+                return (
+                  <div style={{ gridColumn: '1 / -1', padding: '14px', background: 'var(--surface-soft)', borderRadius: '10px', border: '1px solid var(--border)', marginTop: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', flexWrap: 'wrap', gap: '6px' }}>
+                      <span style={{ color: 'var(--teal)' }}>Total Cost: ₹{job.repairCost}</span>
+                      {(job.advancePayment || 0) > 0 && (
+                        <span style={{ color: 'var(--green)' }}>Advance: ₹{job.advancePayment}</span>
+                      )}
+                      <span style={{ color: 'var(--amber)', fontWeight: 'bold' }}>Due: ₹{totalDue}</span>
+                    </div>
+                    
+                    <label className="field" style={{ marginBottom: '10px' }}>
+                      <span>Payment Received at Delivery</span>
+                      <div className="input-with-icon">
+                        <IndianRupee size={16} />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          value={deliveryPayment}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "");
+                            setDeliveryPayment(val);
+                            const paid = Number(val) || 0;
+                            setIsCredit((totalDue - paid) > 0);
+                          }}
+                          placeholder={`Max ₹${totalDue}`}
+                        />
+                      </div>
+                    </label>
+
+                    {remaining > 0 && (
+                      <div style={{ 
+                        padding: '10px', 
+                        background: 'rgba(245, 158, 11, 0.1)', 
+                        borderRadius: '8px', 
+                        border: '1px solid rgba(245, 158, 11, 0.3)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center'
+                      }}>
+                        <span style={{ color: 'var(--amber)', fontSize: '0.95rem' }}>
+                          <AlertTriangle size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                          Credit Balance
+                        </span>
+                        <strong style={{ color: 'var(--amber)', fontSize: '1.1rem' }}>₹{remaining}</strong>
+                      </div>
+                    )}
+                    {remaining <= 0 && paidNow > 0 && (
+                      <div style={{ 
+                        padding: '10px', 
+                        background: 'rgba(16, 185, 129, 0.1)', 
+                        borderRadius: '8px', 
+                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                        textAlign: 'center'
+                      }}>
+                        <span style={{ color: 'var(--green)', fontWeight: 'bold' }}>
+                          <CheckCircle2 size={14} style={{ verticalAlign: 'middle', marginRight: '4px' }} />
+                          Full Payment Received ✓
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
               <button type="submit" className="primary-button full-width" aria-label="Action button">
                 Confirm Update
               </button>
@@ -2238,14 +2529,23 @@ function StatusPanel({
                 >
                   Cancel
                 </button>
-                <button
+                 <button
                   className="primary-button"
                   style={{ flex: 1, justifyContent: "center" }}
                   onClick={() => {
                     const finalNote = parts.map(p => p.name.trim()).filter(Boolean).join(", ");
                     const finalCost = parts.reduce((sum, p) => sum + (Number(p.price) || 0), 0);
                     // Pass repairNote + parts list to the history note if needed, but onSave expects the primary repairNote
-                    onSave(job.id, status, assignedEngineerId, repairNote, finalCost > 0 ? finalCost : undefined, parts);
+                    onSave(
+                      job.id, 
+                      status, 
+                      assignedEngineerId, 
+                      repairNote, 
+                      finalCost > 0 ? finalCost : undefined, 
+                      parts, 
+                      status === "Delivered" ? isCredit : undefined,
+                      status === "Delivered" ? (Number(deliveryPayment) || undefined) : undefined
+                    );
                     setStatusConfirmOpen(false);
                     setDialogOpen(false);
                   }}
@@ -2665,6 +2965,9 @@ function DashboardView({
   inventory,
   selectedJobId,
   onSelectJob,
+  upiId,
+  upiName,
+  onMarkPaid,
 }: {
   user: AppUser;
   users: AppUser[];
@@ -2672,10 +2975,13 @@ function DashboardView({
   inventory: InventoryItem[];
   selectedJobId?: string;
   onSelectJob: (id: string) => void;
+  upiId?: string;
+  upiName?: string;
+  onMarkPaid: (jobId: string) => void;
 }) {
   return (
     <>
-      <SummaryGrid user={user} jobs={jobs} inventory={inventory} />
+      <SummaryGrid user={user} jobs={jobs} inventory={inventory} upiId={upiId} upiName={upiName} onMarkPaid={onMarkPaid} />
       <div className="dashboard-grid">
         <JobsPanel
           jobs={jobs.slice(0, 5)}
@@ -2686,6 +2992,116 @@ function DashboardView({
 
       </div>
     </>
+  );
+}
+
+function CustomersPanel({
+  customers,
+  onEditCustomer,
+  onDeleteCustomer,
+}: {
+  customers: Customer[];
+  onEditCustomer: (id: string, name: string, mobileNumber: string) => void;
+  onDeleteCustomer: (id: string) => void;
+}) {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editMobile, setEditMobile] = useState("");
+
+  const filtered = (customers || []).filter(
+    (c) =>
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.mobileNumber.includes(searchTerm)
+  );
+
+  const handleEdit = (c: Customer) => {
+    setEditingId(c.id);
+    setEditName(c.name);
+    setEditMobile(c.mobileNumber);
+  };
+
+  const saveEdit = () => {
+    if (editingId && editName.trim() && editMobile.trim()) {
+      onEditCustomer(editingId, editName.trim(), editMobile.trim());
+      setEditingId(null);
+    }
+  };
+
+  return (
+    <section className="panel inventory-panel" aria-labelledby="customers-title">
+      <div className="panel-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+        <div>
+          <h3 id="customers-title">Customer Directory</h3>
+          <p className="subtitle">Manage customer details</p>
+        </div>
+        <div className="search-bar" style={{ minWidth: "250px" }}>
+          <Search size={18} />
+          <input
+            type="text"
+            placeholder="Search customers..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+      <div className="table-responsive">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Mobile Number</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={3} style={{ textAlign: "center", padding: "24px" }}>
+                  No customers found.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((c) => (
+                <tr key={c.id}>
+                  <td>
+                    {editingId === c.id ? (
+                      <input value={editName} onChange={(e) => setEditName(e.target.value)} />
+                    ) : (
+                      c.name
+                    )}
+                  </td>
+                  <td>
+                    {editingId === c.id ? (
+                      <input value={editMobile} onChange={(e) => setEditMobile(e.target.value)} />
+                    ) : (
+                      c.mobileNumber
+                    )}
+                  </td>
+                  <td>
+                    {editingId === c.id ? (
+                      <div className="action-buttons">
+                        <button onClick={saveEdit} className="icon-button" style={{ color: "var(--green)" }}><CheckCircle2 size={18}/></button>
+                        <button onClick={() => setEditingId(null)} className="icon-button"><X size={18}/></button>
+                      </div>
+                    ) : (
+                      <div className="action-buttons">
+                        <button onClick={() => handleEdit(c)} className="icon-button" title="Edit Customer"><PenTool size={18}/></button>
+                        <button onClick={() => {
+                          if (window.confirm(`Are you sure you want to delete ${c.name}? Their past jobs will remain intact.`)) {
+                            onDeleteCustomer(c.id);
+                          }
+                        }} className="icon-button" style={{ color: "var(--red)" }} title="Delete Customer"><Trash2 size={18}/></button>
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
   );
 }
 
@@ -3524,6 +3940,9 @@ export default function App() {
     () => loadData().jobs[0]?.id,
   );
   const dataRef = useRef(data);
+  useEffect(() => {
+    dataRef.current = data;
+  }, [data]);
   const lastServerJsonRef = useRef("");
 
   
@@ -3775,9 +4194,21 @@ export default function App() {
         ...current.inventory,
       ];
 
+      const customerExists = current.customers?.some(c => c.mobileNumber === form.mobileNumber.trim());
+      const newCustomers = customerExists ? (current.customers || []) : [
+        {
+          id: createId("cust"),
+          name: form.customerName.trim(),
+          mobileNumber: form.mobileNumber.trim(),
+          createdAt: now
+        },
+        ...(current.customers || [])
+      ];
+
       return {
         ...current,
         inventory: newInventory,
+        customers: newCustomers,
         jobs: [job, ...current.jobs],
       };
     });
@@ -3791,7 +4222,9 @@ export default function App() {
     assignedEngineerId: string,
     note: string,
     repairCost?: number,
-    partsUsed?: { name: string; price: string; isCustom: boolean }[]
+    partsUsed?: { name: string; price: string; isCustom: boolean }[],
+    isCredit?: boolean,
+    deliveryPayment?: number
   ) => {
     if (!user) {
       return;
@@ -3857,6 +4290,8 @@ export default function App() {
                 },
               ]
             : job.history,
+          isCredit: isCredit !== undefined ? isCredit : job.isCredit,
+          deliveryPayment: deliveryPayment !== undefined ? deliveryPayment : job.deliveryPayment,
         };
       }),
     }));
@@ -3933,6 +4368,22 @@ export default function App() {
     handleSetData((current) => ({
       ...current,
       users: current.users.map((u) => (u.id === updatedUser.id ? finalUser : u)),
+    }));
+  };
+
+  const editCustomer = (id: string, name: string, mobileNumber: string) => {
+    handleSetData((current) => ({
+      ...current,
+      customers: current.customers?.map((c) =>
+        c.id === id ? { ...c, name, mobileNumber } : c
+      ) || [],
+    }));
+  };
+
+  const deleteCustomer = (id: string) => {
+    handleSetData((current) => ({
+      ...current,
+      customers: current.customers?.filter((c) => c.id !== id) || [],
     }));
   };
 
@@ -4100,6 +4551,23 @@ export default function App() {
           inventory={data.inventory}
           selectedJobId={selectedJobId}
           onSelectJob={openJobDetails}
+          upiId={data.upiId}
+          upiName={data.upiName}
+          onMarkPaid={(jobId) => {
+            handleSetData(prev => ({
+              ...prev,
+              jobs: prev.jobs.map(j => {
+                if (j.id === jobId) {
+                  return {
+                    ...j,
+                    isCredit: false,
+                    deliveryPayment: (j.repairCost || 0) - (j.advancePayment || 0)
+                  };
+                }
+                return j;
+              })
+            }));
+          }}
         />
       ) : null}
 
@@ -4154,6 +4622,14 @@ export default function App() {
           onAddUser={addUser}
           onRemoveUser={removeUser}
           onEditUser={editUser}
+        />
+      ) : null}
+
+      {activeView === "customers" ? (
+        <CustomersPanel
+          customers={data.customers || []}
+          onEditCustomer={editCustomer}
+          onDeleteCustomer={deleteCustomer}
         />
       ) : null}
 

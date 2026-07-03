@@ -20,11 +20,34 @@ function jsonResponse($data, $statusCode = 200) {
 
 function verifyApiKey() {
     global $API_KEY;
-    $headers = apache_request_headers();
-    $providedKey = isset($headers['X-API-KEY']) ? $headers['X-API-KEY'] : (isset($_SERVER['HTTP_X_API_KEY']) ? $_SERVER['HTTP_X_API_KEY'] : '');
+    $providedKey = '';
+    
+    if (isset($_GET['api_key'])) {
+        $providedKey = $_GET['api_key'];
+    } elseif (isset($_POST['api_key'])) {
+        $providedKey = $_POST['api_key'];
+    } elseif (isset($_SERVER['HTTP_X_API_KEY'])) {
+        $providedKey = $_SERVER['HTTP_X_API_KEY'];
+    } elseif (isset($_SERVER['X_API_KEY'])) {
+        $providedKey = $_SERVER['X_API_KEY'];
+    } elseif (function_exists('apache_request_headers')) {
+        $headers = apache_request_headers();
+        if (isset($headers['X-API-KEY'])) {
+            $providedKey = $headers['X-API-KEY'];
+        } elseif (isset($headers['x-api-key'])) {
+            $providedKey = $headers['x-api-key'];
+        }
+    } elseif (function_exists('getallheaders')) {
+        $headers = getallheaders();
+        if (isset($headers['X-API-KEY'])) {
+            $providedKey = $headers['X-API-KEY'];
+        } elseif (isset($headers['x-api-key'])) {
+            $providedKey = $headers['x-api-key'];
+        }
+    }
     
     if ($providedKey !== $API_KEY) {
-        jsonResponse(["error" => "Unauthorized access. Invalid API Key."], 401);
+        jsonResponse(["error" => "Unauthorized access. Invalid API Key. Provided: " . $providedKey], 401);
     }
 }
 
@@ -40,8 +63,17 @@ if (!file_exists($DATA_FILE)) {
                 "role" => "admin",
                 "pin" => "0000",
                 "email" => "amitanurup@gmail.com",
-                "password" => password_hash("Amit@1990", PASSWORD_DEFAULT)
+                "password" => password_hash("Amit@12345", PASSWORD_DEFAULT)
             ],
+            [
+                "id" => "ADMIN_GCC",
+                "name" => "GCC Bhubaneswar",
+                "role" => "admin",
+                "pin" => "0000",
+                "email" => "gccbhubaneswar@gmail.com",
+                "password" => password_hash("Admin@12345", PASSWORD_DEFAULT)
+            ]
+        ],
             [
                 "id" => "ADMIN_GCC",
                 "name" => "GCC Bhubaneswar",

@@ -11,6 +11,13 @@ export type ServiceStatus =
   | "Request Reassign"
   | "Returned";
 
+export type Customer = {
+  id: string;
+  name: string;
+  mobileNumber: string;
+  createdAt: string;
+};
+
 export type User = {
   id: string;
   name: string;
@@ -51,6 +58,8 @@ export type ServiceJob = {
   estimatedCost?: string;
   repairCost?: number;
   advancePayment?: number;
+  deliveryPayment?: number;
+  isCredit?: boolean;
 };
 
 export type InventoryItem = {
@@ -66,6 +75,7 @@ export type AppData = {
   storeLogo?: string;
   jobs: ServiceJob[];
   inventory: InventoryItem[];
+  customers?: Customer[];
   users: User[];
   googleClientId?: string;
   googleApiKey?: string;

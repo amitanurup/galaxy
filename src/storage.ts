@@ -1,3 +1,4 @@
+
 import { createDefaultData } from "./data";
 import type { AppData, User } from "./types";
 
@@ -14,6 +15,26 @@ export const loadData = (): AppData => {
     if (!Array.isArray(parsed.jobs) || !Array.isArray(parsed.inventory) || !Array.isArray(parsed.users)) {
       return createDefaultData();
     }
+    
+    // Migration: ensure customers array exists
+    if (!Array.isArray(parsed.customers)) {
+      parsed.customers = [];
+    }
+    
+    // Migration: populate customers from jobs if they don't exist in customers list
+    const existingMobiles = new Set(parsed.customers.map(c => c.mobileNumber));
+    parsed.jobs.forEach(job => {
+      if (job.mobileNumber && !existingMobiles.has(job.mobileNumber)) {
+        parsed.customers!.push({
+          id: "cust-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+          name: job.customerName,
+          mobileNumber: job.mobileNumber,
+          createdAt: job.createdAt || new Date().toISOString()
+        });
+        existingMobiles.add(job.mobileNumber);
+      }
+    });
+
     return parsed;
   } catch {
     return createDefaultData();
@@ -24,6 +45,8 @@ export const saveData = (data: AppData) => {
   localStorage.setItem(DATA_KEY, JSON.stringify(data));
 };
 
+let apiBaseUrl = "https://etechworld.in/galaxy_api";
+
 export const subscribeToServerData = (
   onData: (data: AppData | null) => void,
   onError: () => void
@@ -32,13 +55,46 @@ export const subscribeToServerData = (
 
   const fetchData = async () => {
     try {
-      const res = await fetch("https://etechworld.in/galaxy_api/get_data.php", {
-        headers: { "X-API-KEY": "galaxy_it_repair_secret_key_2026" }
-      });
+      let res;
+      try {
+        res = await fetch(`${apiBaseUrl}/get_data.php?api_key=galaxy_it_repair_secret_key_2026`);
+      } catch (err) {
+        if (apiBaseUrl === "https://etechworld.in/galaxy_api") {
+          apiBaseUrl = "https://www.etechworld.in/galaxy_api";
+          res = await fetch(`${apiBaseUrl}/get_data.php?api_key=galaxy_it_repair_secret_key_2026`);
+        } else {
+          throw err;
+        }
+      }
+
       if (res.ok) {
         const parsed = await res.json();
         if (parsed && Array.isArray(parsed.jobs) && Array.isArray(parsed.inventory) && Array.isArray(parsed.users)) {
-          if (active) onData(parsed);
+          if (!Array.isArray(parsed.customers)) {
+            parsed.customers = [];
+          }
+          // Migration from jobs to customers
+          const existingMobiles = new Set(parsed.customers.map((c: any) => c.mobileNumber));
+          let migrated = false;
+          parsed.jobs.forEach((job: any) => {
+            if (job.mobileNumber && !existingMobiles.has(job.mobileNumber)) {
+              parsed.customers.push({
+                id: "cust-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7),
+                name: job.customerName,
+                mobileNumber: job.mobileNumber,
+                createdAt: job.createdAt || new Date().toISOString()
+              });
+              existingMobiles.add(job.mobileNumber);
+              migrated = true;
+            }
+          });
+          
+          if (active) {
+            onData(parsed);
+            if (migrated) {
+              saveServerData(parsed);
+            }
+          }
         } else {
           if (active) onData(null);
         }
@@ -62,14 +118,30 @@ export const subscribeToServerData = (
 
 export const saveServerData = async (data: AppData): Promise<boolean> => {
   try {
-    const res = await fetch("https://etechworld.in/galaxy_api/save_data.php", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-API-KEY": "galaxy_it_repair_secret_key_2026"
-      },
-      body: JSON.stringify(data)
-    });
+    const cleanData = JSON.parse(JSON.stringify(data));
+    let res;
+    try {
+      res = await fetch(`${apiBaseUrl}/save_data.php?api_key=galaxy_it_repair_secret_key_2026`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/plain"
+        },
+        body: JSON.stringify(cleanData)
+      });
+    } catch (err) {
+      if (apiBaseUrl === "https://etechworld.in/galaxy_api") {
+        apiBaseUrl = "https://www.etechworld.in/galaxy_api";
+        res = await fetch(`${apiBaseUrl}/save_data.php?api_key=galaxy_it_repair_secret_key_2026`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "text/plain"
+          },
+          body: JSON.stringify(cleanData)
+        });
+      } else {
+        throw err;
+      }
+    }
     return res.ok;
   } catch (error) {
     console.error("API save error:", error);
