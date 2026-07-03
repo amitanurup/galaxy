@@ -8,72 +8,83 @@
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
-  color: #f3f4f6;
-  background: #090d16;
+  color: #e8e4f3;
+  background: #0b0714;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --bg: #090d16;
-  --surface: rgba(17, 24, 39, 0.7);
-  --surface-solid: #111827;
-  --surface-soft: rgba(31, 41, 55, 0.5);
-  --text: #f3f4f6;
-  --text-contrast: #ffffff;
-  --muted: #9ca3af;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-glow: rgba(6, 182, 212, 0.35);
+
+  /* === DEEP PURPLE DARK THEME === */
+  --bg: #0b0714;
+  --bg2: #0f0b1f;
+  --surface: rgba(22, 14, 42, 0.75);
+  --surface-solid: #120d24;
+  --surface-soft: rgba(35, 22, 65, 0.6);
+  --text: #e8e4f3;
+  --text-contrast: #f5f2ff;
+  --muted: #8b82a7;
+  --border: rgba(139, 92, 246, 0.15);
+  --border-glow: rgba(139, 92, 246, 0.45);
+
+  /* Accent Colors */
+  --primary: #8b5cf6;
+  --primary-dark: #7c3aed;
+  --primary-light: #a78bfa;
+  --glow: rgba(139, 92, 246, 0.4);
   --teal: #06b6d4;
   --teal-dark: #0891b2;
-  --blue: #3b82f6;
+  --blue: #6366f1;
   --amber: #f59e0b;
-  --red: #ef4444;
+  --red: #f43f5e;
   --green: #10b981;
   --purple: #8b5cf6;
-  --shadow: 0 20px 40px rgba(0, 0, 0, 0.35);
-  --glass-bg: rgba(17, 24, 39, 0.65);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --input-bg: rgba(0, 0, 0, 0.2);
-  --input-color: #ffffff;
-  --input-border: rgba(255, 255, 255, 0.1);
-  --input-focus-bg: rgba(0, 0, 0, 0.3);
-  --nav-bg: rgba(10, 15, 30, 0.8);
+  --pink: #ec4899;
+
+  --shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 8px 32px rgba(139, 92, 246, 0.25);
+  --glass-bg: rgba(22, 14, 42, 0.7);
+  --glass-border: rgba(139, 92, 246, 0.18);
+  --input-bg: rgba(12, 7, 25, 0.5);
+  --input-color: #f5f2ff;
+  --input-border: rgba(139, 92, 246, 0.2);
+  --input-focus-bg: rgba(12, 7, 25, 0.7);
+  --nav-bg: rgba(11, 7, 20, 0.92);
   --card-bg: var(--glass-bg);
 }
 
 .light-theme {
-  --bg: #f1f5f9;
-  --surface: rgba(255, 255, 255, 0.8);
+  --bg: #f5f3ff;
+  --bg2: #ede9fe;
+  --surface: rgba(255, 255, 255, 0.85);
   --surface-solid: #ffffff;
-  --surface-soft: rgba(241, 245, 249, 0.9);
-  --text: #0f172a;
-  --text-contrast: #0f172a;
-  --muted: #64748b;
-  --border: rgba(15, 23, 42, 0.08);
-  --border-glow: rgba(6, 182, 212, 0.25);
-  --shadow: 0 20px 40px rgba(15, 23, 42, 0.06);
-  --glass-bg: rgba(255, 255, 255, 0.8);
-  --glass-border: rgba(15, 23, 42, 0.08);
-  --input-bg: rgba(15, 23, 42, 0.04);
-  --input-color: #0f172a;
-  --input-border: rgba(15, 23, 42, 0.12);
-  --input-focus-bg: rgba(15, 23, 42, 0.06);
-  --nav-bg: rgba(255, 255, 255, 0.85);
+  --surface-soft: rgba(237, 233, 254, 0.9);
+  --text: #1e1433;
+  --text-contrast: #0f0a1e;
+  --muted: #6d5f8a;
+  --border: rgba(109, 40, 217, 0.1);
+  --border-glow: rgba(109, 40, 217, 0.2);
+  --shadow: 0 20px 40px rgba(109, 40, 217, 0.08);
+  --shadow-glow: 0 8px 32px rgba(109, 40, 217, 0.12);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(109, 40, 217, 0.12);
+  --input-bg: rgba(109, 40, 217, 0.04);
+  --input-color: #0f0a1e;
+  --input-border: rgba(109, 40, 217, 0.15);
+  --input-focus-bg: rgba(109, 40, 217, 0.06);
+  --nav-bg: rgba(255, 255, 255, 0.92);
   --card-bg: #ffffff;
-  
-  color: #0f172a;
-  background: #f1f5f9;
+
+  color: #1e1433;
+  background: #f5f3ff;
 }
 
 .light-theme body {
   background:
-    radial-gradient(circle at top, rgba(99, 102, 241, 0.08), transparent 600px),
-    radial-gradient(
-      circle at bottom right,
-      rgba(6, 182, 212, 0.04),
-      transparent 500px
-    ),
+    radial-gradient(ellipse at 20% 0%, rgba(139, 92, 246, 0.1), transparent 500px),
+    radial-gradient(ellipse at 80% 100%, rgba(236, 72, 153, 0.06), transparent 400px),
     var(--bg);
 }
+
 
 * {
   box-sizing: border-box;
@@ -95,12 +106,9 @@ body {
   min-width: 320px;
   min-height: 100vh;
   background:
-    radial-gradient(circle at top, rgba(99, 102, 241, 0.15), transparent 600px),
-    radial-gradient(
-      circle at bottom right,
-      rgba(6, 182, 212, 0.08),
-      transparent 500px
-    ),
+    radial-gradient(ellipse at 15% 0%, rgba(139, 92, 246, 0.22), transparent 500px),
+    radial-gradient(ellipse at 85% 100%, rgba(236, 72, 153, 0.12), transparent 450px),
+    radial-gradient(ellipse at 50% 50%, rgba(99, 102, 241, 0.06), transparent 600px),
     var(--bg);
   background-attachment: fixed;
 }
@@ -114,11 +122,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(139, 92, 246, 0.25);
   border-radius: 999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(139, 92, 246, 0.45);
 }
 
 button,
@@ -242,8 +250,9 @@ select:disabled {
   width: 200%;
   height: 200%;
   background: radial-gradient(
-    circle,
-    rgba(6, 182, 212, 0.08) 0%,
+    ellipse at 30% 30%,
+    rgba(139, 92, 246, 0.12) 0%,
+    rgba(236, 72, 153, 0.05) 40%,
     transparent 70%
   );
   pointer-events: none;
@@ -304,9 +313,9 @@ select:disabled {
   align-items: center;
   justify-content: center;
   border-radius: 14px;
-  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   color: #ffffff;
-  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.35);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4);
 }
 
 .login-form {
@@ -501,9 +510,9 @@ select:disabled {
 
 .nav-button.active {
   color: var(--text-contrast);
-  background: rgba(6, 182, 212, 0.12);
-  border-color: rgba(6, 182, 212, 0.25);
-  box-shadow: 0 4px 20px rgba(6, 182, 212, 0.15);
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
 }
 
 .nav-button.active::before {
@@ -514,8 +523,8 @@ select:disabled {
   height: 70%;
   width: 4px;
   border-radius: 0 4px 4px 0;
-  background: var(--teal);
-  box-shadow: 0 0 8px var(--teal);
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
 }
 
 .more-menu-dropdown {
@@ -689,10 +698,10 @@ select:disabled {
 }
 
 .sync-pill.online {
-  color: var(--teal);
-  border-color: rgba(6, 182, 212, 0.25);
-  background: rgba(6, 182, 212, 0.08);
-  box-shadow: 0 0 15px rgba(6, 182, 212, 0.05);
+  color: var(--primary-light);
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.1);
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.1);
 }
 
 /* Stats Cards Grid */
@@ -707,19 +716,21 @@ select:disabled {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 72px;
-  padding: 12px 16px;
+  min-height: 76px;
+  padding: 14px 16px;
   background: var(--surface);
-  -webkit-backdrop-filter:;
-  backdrop-filter:;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  border-radius: 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-3px);
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 8px 28px rgba(139, 92, 246, 0.15);
 }
 
 .stat-card span {
@@ -750,8 +761,8 @@ select:disabled {
 }
 
 .tone-blue .stat-icon {
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.15);
+  color: #6366f1;
+  background: rgba(99, 102, 241, 0.15);
 }
 
 .tone-amber .stat-icon {
@@ -765,13 +776,13 @@ select:disabled {
 }
 
 .tone-teal .stat-icon {
-  color: var(--teal);
-  background: rgba(6, 182, 212, 0.15);
+  color: #a78bfa;
+  background: rgba(167, 139, 250, 0.15);
 }
 
 .tone-dark .stat-icon {
-  color: var(--purple);
-  background: rgba(139, 92, 246, 0.15);
+  color: var(--pink);
+  background: rgba(236, 72, 153, 0.15);
 }
 
 /* Dashboard Panels */
@@ -811,8 +822,8 @@ select:disabled {
   display: grid;
   place-items: center;
   border-radius: 14px;
-  color: var(--teal);
-  background: rgba(6, 182, 212, 0.15);
+  color: var(--primary-light);
+  background: rgba(139, 92, 246, 0.15);
 }
 
 /* Fields & Custom Sleek Inputs */
@@ -863,9 +874,9 @@ textarea {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--teal);
+  border-color: var(--primary);
   background: var(--input-focus-bg);
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
 }
 
 select option {
@@ -920,15 +931,16 @@ select option {
 .primary-button {
   border: none;
   color: #ffffff;
-  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
   padding: 0 20px;
-  box-shadow: 0 8px 24px rgba(6, 182, 212, 0.25);
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.35);
+  letter-spacing: 0.01em;
 }
 
 .primary-button:hover {
-  background: linear-gradient(135deg, #0891b2, #0e7490);
+  background: linear-gradient(135deg, #7c3aed, #6d28d9);
   transform: translateY(-1px);
-  box-shadow: 0 10px 28px rgba(6, 182, 212, 0.35);
+  box-shadow: 0 12px 30px rgba(139, 92, 246, 0.45);
 }
 
 .primary-button:active {
@@ -941,41 +953,41 @@ select option {
 }
 
 .utility-button {
-  border: 1px solid rgba(6, 182, 212, 0.2);
-  color: var(--teal);
-  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  color: var(--primary-light);
+  background: rgba(139, 92, 246, 0.1);
   padding: 0 16px;
   white-space: nowrap;
 }
 
 .utility-button:hover {
-  background: rgba(6, 182, 212, 0.15);
-  border-color: rgba(6, 182, 212, 0.4);
+  background: rgba(139, 92, 246, 0.18);
+  border-color: rgba(139, 92, 246, 0.45);
 }
 
 .utility-button.filled {
   color: #ffffff;
-  border-color: var(--teal-dark);
-  background: var(--teal-dark);
+  border-color: var(--primary-dark);
+  background: var(--primary-dark);
 }
 
 .utility-button.filled:hover {
-  background: #0e7490;
+  background: #6d28d9;
 }
 
 .icon-button {
   width: 40px;
   height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(139, 92, 246, 0.15);
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(139, 92, 246, 0.04);
   flex: 0 0 auto;
 }
 
 .icon-button:hover {
   color: #ffffff;
-  border-color: rgba(6, 182, 212, 0.25);
-  background: rgba(6, 182, 212, 0.08);
+  border-color: rgba(139, 92, 246, 0.35);
+  background: rgba(139, 92, 246, 0.12);
 }
 
 .icon-button.danger:hover {
@@ -1128,9 +1140,14 @@ select option {
   content: "";
   position: absolute;
   inset: 15%;
-  border: 3px solid rgba(6, 182, 212, 0.8);
+  border: 2px solid rgba(139, 92, 246, 0.85);
   border-radius: 18px;
-  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.45), 0 0 25px rgba(139, 92, 246, 0.35);
+}
+
+@keyframes scanAnim {
+  0%, 100% { top: 18%; }
+  50% { top: 82%; }
 }
 
 .scan-line {
@@ -1139,19 +1156,9 @@ select option {
   right: 18%;
   top: 50%;
   height: 2px;
-  background: #22d3ee;
-  box-shadow: 0 0 15px rgba(34, 211, 238, 0.8);
+  background: linear-gradient(90deg, transparent, #a78bfa, transparent);
+  box-shadow: 0 0 18px rgba(167, 139, 250, 0.9);
   animation: scanAnim 2s infinite ease-in-out;
-}
-
-@keyframes scanAnim {
-  0%,
-  100% {
-    top: 18%;
-  }
-  50% {
-    top: 82%;
-  }
 }
 
 .scanner-message {
@@ -1217,14 +1224,16 @@ select option {
 }
 
 .job-row:hover {
-  border-color: rgba(6, 182, 212, 0.25);
-  background: rgba(6, 182, 212, 0.04);
-  transform: translateY(-1px);
+  border-color: rgba(139, 92, 246, 0.3);
+  background: rgba(139, 92, 246, 0.06);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.12);
 }
 
 .job-row.selected {
-  border-color: rgba(6, 182, 212, 0.4);
-  background: rgba(6, 182, 212, 0.08);
+  border-color: rgba(139, 92, 246, 0.45);
+  background: rgba(139, 92, 246, 0.1);
+  box-shadow: 0 6px 24px rgba(139, 92, 246, 0.15);
 }
 
 .job-photo {
@@ -1759,21 +1768,22 @@ select option {
   .nav-list {
     position: fixed;
     z-index: 100;
-    left: 16px;
-    right: 16px;
-    bottom: 16px;
+    left: 12px;
+    right: 12px;
+    bottom: 14px;
     display: flex;
     justify-content: space-around;
     gap: 2px;
     padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
-    background: rgba(17, 24, 39, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
+    background: rgba(14, 8, 28, 0.92);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 26px;
     box-shadow:
-      0 10px 30px rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(255, 255, 255, 0.05) inset;
-    -webkit-backdrop-filter:;
-  backdrop-filter:;
+      0 12px 40px rgba(0, 0, 0, 0.6),
+      0 0 0 1px rgba(139, 92, 246, 0.08) inset,
+      0 0 30px rgba(139, 92, 246, 0.08);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
   }
 
   .nav-button {
@@ -1806,6 +1816,12 @@ select option {
   .nav-button svg {
     width: 20px;
     height: 20px;
+  }
+
+  .nav-button.active {
+    background: rgba(139, 92, 246, 0.18);
+    color: var(--primary-light);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.2);
   }
 
   .nav-button.active::before {

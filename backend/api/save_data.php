@@ -44,11 +44,23 @@ if ($existingData && isset($existingData['users'])) {
     }
 }
 
-// Write to file safely
+// Write to file safely using temp file in same directory
 $tempFile = $DATA_FILE . '.tmp';
-if (file_put_contents($tempFile, json_encode($input, JSON_PRETTY_PRINT))) {
-    rename($tempFile, $DATA_FILE);
-    jsonResponse(["success" => true, "message" => "Data saved successfully"], 200);
+$jsonData = json_encode($input, JSON_PRETTY_PRINT);
+$written = file_put_contents($tempFile, $jsonData, LOCK_EX);
+
+if ($written !== false) {
+    if (rename($tempFile, $DATA_FILE)) {
+        jsonResponse(["success" => true, "message" => "Data saved successfully"], 200);
+    } else {
+        // rename failed, try direct write as fallback
+        if (file_put_contents($DATA_FILE, $jsonData, LOCK_EX) !== false) {
+            @unlink($tempFile);
+            jsonResponse(["success" => true, "message" => "Data saved (direct write)"], 200);
+        } else {
+            jsonResponse(["error" => "Failed to rename temp file to data.json"], 500);
+        }
+    }
 } else {
     jsonResponse(["error" => "Failed to write data to server"], 500);
 }

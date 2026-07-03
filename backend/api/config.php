@@ -73,15 +73,6 @@ if (!file_exists($DATA_FILE)) {
                 "email" => "gccbhubaneswar@gmail.com",
                 "password" => password_hash("Admin@12345", PASSWORD_DEFAULT)
             ]
-        ],
-            [
-                "id" => "ADMIN_GCC",
-                "name" => "GCC Bhubaneswar",
-                "role" => "admin",
-                "pin" => "0000",
-                "email" => "gccbhubaneswar@gmail.com",
-                "password" => password_hash("Admin@12345", PASSWORD_DEFAULT)
-            ]
         ]
     ];
     file_put_contents($DATA_FILE, json_encode($defaultData, JSON_PRETTY_PRINT));
